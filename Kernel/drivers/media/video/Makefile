@@ -74,6 +74,10 @@ obj-$(CONFIG_VIDEO_TCM825X) += tcm825x.o
 obj-$(CONFIG_VIDEO_TVEEPROM) += tveeprom.o
 obj-$(CONFIG_VIDEO_MT9V011) += mt9v011.o
 
+ifeq ($(CONFIG_MACH_VICTORY),y)
+TARGET_PRODUCT := SPH-D700
+endif
+
 ifeq ($(TARGET_PRODUCT),SCH-I500)
 obj-$(CONFIG_VIDEO_CE147) += ce147-atlas.o
 else ifeq ($(TARGET_PRODUCT),SCH-R910)
