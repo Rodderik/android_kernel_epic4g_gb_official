@@ -2873,7 +2873,6 @@ void  get_message(void)
 				fingerInfo[id].pressure= 0;
 				bChangeUpDn= 1;
 				touch_state_val = 0;
-				printk(KERN_DEBUG "[TSP]### Finger Up \n");
             }
             else if ( (quantum_msg[1] & 0x80) && (quantum_msg[1] & 0x40) ) {   // Detect & Press
 #ifdef CONFIG_MACH_VICTORY
@@ -2890,7 +2889,6 @@ void  get_message(void)
                 fingerInfo[id].x= (int16_t)x;
                 fingerInfo[id].y= (int16_t)y;
                 bChangeUpDn= 1;
-                printk(KERN_DEBUG "[TSP]### Finger Down \n");
             }
             else if ( (quantum_msg[1] & 0x80) && (quantum_msg[1] & 0x10) ) {    // Detect & Move
                 touch_message_flag = 1;
