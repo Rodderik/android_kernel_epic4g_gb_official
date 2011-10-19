@@ -458,6 +458,32 @@ config KEYPAD_S3C_FORTE
         bool "Forte S3C Keypad"
         help
         Forte Product Key Board
+
+config KEYPAD_S3C_EXPORT_DELAYS
+	bool "Export keypad column-switch and timer delays via sysfs"
+	depends on KEYPAD_S3C && SYSFS
+	default y
+	help
+	  Allows runtime configuration of the keypad column-switch and timer delays
+	  via sysfs exported column_delay and timer_delay variables.
+
+	  The current delays may be read with:
+	    cat /sys/devices/platform/s3c-keypad/column_delay
+	    cat /sys/devices/platform/s3c-keypad/timer_delay
+	  and new delays may be set with:
+	    echo C > /sys/devices/platform/s3c-keypad/column_delay
+	    echo T > /sys/devices/platform/s3c-keypad/timer_delay
+	  where C is the column-switch delay (µs) and T the timer delay (jiffies).
+
+	  A timer delay of "1" yields the shortest timer, and the most responsive
+	  keypad possible, whereas a delay of HZ (e.g., "256") is the longest
+	  allowed.  For HZ=256, a delay of "7" (3*HZ/100) is default.
+
+	  A column-switch delay of "1" is the most efficient (0.02% CPU util.) but
+	  results in ghost key presses across columns (rows).  The default "300" is
+	  very inefficient, 6.9% CPU util., for a timer delay of "7".  Values of
+	  "50" (1.4% CPU) and even "5" (0.2% CPU) work well without ghosting.  This
+	  delay affects efficiency only, not responsiveness.
 endif
 
 config S3C_KEYPAD_DEBUG
