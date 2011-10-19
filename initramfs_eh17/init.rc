@@ -634,6 +634,9 @@ on boot
     chown system system /dev/dun
 # +++++++++++++++++++++++++++++++++++++++++++      
 
+    write /sys/devices/platform/s3c-keypad/column_delay 5
+    write /sys/devices/platform/s3c-keypad/timer_delay  5
+
     class_start default
 
 ## Daemon processes to be run by init.
