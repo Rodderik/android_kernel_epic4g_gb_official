@@ -484,6 +484,24 @@ config KEYPAD_S3C_EXPORT_DELAYS
 	  very inefficient, 6.9% CPU util., for a timer delay of "7".  Values of
 	  "50" (1.4% CPU) and even "5" (0.2% CPU) work well without ghosting.  This
 	  delay affects efficiency only, not responsiveness.
+
+config KEYPAD_S3C_SENSITIVE_PRINTKS
+	bool "Disable sensitive printks and allow them to be reenabled via sysfs"
+	depends on KEYPAD_S3C && SYSFS
+	default y
+	help
+	  Disables writing of sensitive (e.g., keycode) information to the kernel
+	  message ring buffer.  Also adds a sysfs variable (sensitive_printks) to
+	  allow sensitive printks to be (temporarily) reenabled for debugging
+	  purposes.
+
+	  The current sensitive_printks setting may be read with:
+	    cat /sys/devices/platform/s3c-keypad/sensitive_printks
+
+	  Sensitive printks may be reenabled with:
+	    echo 1 > /sys/devices/platform/s3c-keypad/sensitive_printks
+	  and disabled again with:
+	    echo 0 > /sys/devices/platform/s3c-keypad/sensitive_printks
 endif
 
 config S3C_KEYPAD_DEBUG
