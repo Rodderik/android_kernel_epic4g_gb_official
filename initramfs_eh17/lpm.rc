@@ -30,7 +30,8 @@ on early-fs
     insmod /lib/modules/fsr_stl.ko
     insmod /lib/modules/rfs_glue.ko
     insmod /lib/modules/rfs_fat.ko
-
+    #insmod /lib/modules/mbcache.ko
+    #insmod /lib/modules/ext4.ko
     # parameter block
     mkdir /mnt/.lfs 0755 root root
     insmod /lib/modules/j4fs.ko
@@ -40,6 +41,7 @@ on early-fs
 on fs
     mount tmpfs tmpfs /tmp
     mount rfs /dev/block/stl9 /system check=no
+    mount ext4 /dev/block/stl9 /system noatime nodiratime errors=continue
     #mount rfs /dev/block/stl9 /system ro remount
 
     exec apply_disk_policy

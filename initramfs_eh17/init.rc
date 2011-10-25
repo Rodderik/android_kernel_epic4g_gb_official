@@ -108,7 +108,8 @@ loglevel 3
     insmod /lib/modules/rfs_fat.ko
     insmod /lib/modules/dpram.ko
     insmod /lib/modules/j4fs.ko
-
+    #insmod /lib/modules/mbcache.ko
+    #insmod /lib/modules/ext4.ko
     insmod /lib/modules/Si4709_driver.ko
 
     # ko files for vibrator
@@ -121,8 +122,8 @@ loglevel 3
     insmod /lib/modules/hotspot_event_monitoring.ko
 
     #temp
-    chown root root /sbin/fat.format
-    chmod 750 /sbin/fat.format
+    #chown root root /sbin/fat.format
+    #chmod 750 /sbin/fat.format
 
 on fs
 # mount mtd partitions
@@ -132,7 +133,7 @@ on fs
     # mount yaffs2 mtd@userdata /data nosuid nodev
     # mount yaffs2 mtd@cache /cache nosuid nodev
     mount rfs /dev/block/stl9 /system check=no
-
+	mount ext4 /dev/block/stl9 /system noatime nodiratime errors=continue
     # Temp add for FY -> GB update problem 
     # After update GB, need to remove
     copy /tmp/linker /system/bin/linker
@@ -142,7 +143,7 @@ on fs
     copy /tmp/libz.so /system/lib/libz.so
     copy /tmp/libstdc++.so /system/lib/libstdc++.so
 
-    mount rfs /dev/block/stl9 /system ro remount
+    #mount rfs /dev/block/stl9 /system ro remount
 
 # SEC_DMCRYPT for MC_CRYPT_ROOT before apply_disk_policy or apply_sec_devenc_init
     #chown system system /efs
@@ -161,18 +162,19 @@ on fs
     mkdir /data
 # SEC_DMCRYPT crypt flag added data
     # mount rfs /dev/block/mmcblk0p2 /data nosuid nodev check=no
-    mount rfs /dev/block/mmcblk0p2 /data nosuid nodev crypt check=no
-    chown system system /data
-    chmod 0771 /data    
+    #mount rfs /dev/block/mmcblk0p2 /data nosuid nodev crypt check=no
+    #chown system system /data
+    #chmod 0771 /data    
 
     #mkdir /dbdata
   #SEC_DMCRYPT crypt flag added
     mount rfs /dev/block/stl10 /data nosuid nodev crypt check=no
+    mount ext4 /dev/block/stl10 /data nosuid nodev crypt noatime nodiratime	
     #symlink /data /dbdata
     #mount rfs /dev/block/stl10 /data nosuid nodev check=no
     chown system system /data
     chmod 0771 /data
-    chmod 0771 /data
+    #chmod 0771 /data
     mkdir /data/databases
     chown system system /data/databases
     chmod 0777 /data/databases
@@ -183,7 +185,7 @@ on fs
     chown system system /data/db-journal
     chmod 0777 /data/db-journal
     mount rfs /dev/block/stl11 /cache nosuid nodev check=no
-
+	mount ext4 /dev/block/stl11 /cache nosuid nodev noatime nodiratime errors=continue nobh data=writeback barrier=0 noauto_da_alloc
     mkdir /mnt/.lfs 0755 root root
     mount j4fs /dev/block/stl6 /mnt/.lfs
     insmod /lib/modules/param.ko
@@ -198,7 +200,21 @@ on fs
  	
     insmod /lib/modules/wimax_gpio.ko
     insmod /lib/modules/cmc7xx_sdio.ko
-	
+#root
+    chown root system /sbin/su
+    symlink /sbin/busybox /sbin/recovery
+    chown root root /sbin/Superuser.apk
+    chown root system /sbin/busybox
+    chown root system /sbin/userscript.sh
+    chmod 6755 /sbin/su
+    chmod 6755 /sbin/adbd
+    chmod 6755 /sbin/busybox
+    chmod 0644 /sbin/Superuser.apk
+    chmod 0755 /sbin/userscript.sh
+    symlink /system/bin/su /system/xbin/su
+    chmod 6755 /system/bin/su
+    symlink /system/bin/busybox /system/xbin/busybox
+    chmod 0644 /system/app/Superuser.apk	
 
 on post-fs
     # once everything is setup, no need to modify /
@@ -411,6 +427,7 @@ on boot
     hostname localhost
     domainname localdomain
 
+# Start Plus Tweaks-----------------------------------------------------
 # set RLIMIT_NICE to allow priorities from 19 to -20
     setrlimit 13 40 40
 
@@ -431,15 +448,15 @@ on boot
 
 # Define the memory thresholds at which the above process classes will
 # be killed.  These numbers are in pages (4k).
-    setprop ro.FOREGROUND_APP_MEM 2048
-    setprop ro.VISIBLE_APP_MEM 3072
-    setprop ro.PERCEPTIBLE_APP_MEM 4096
-    setprop ro.HEAVY_WEIGHT_APP_MEM 4096
-    setprop ro.SECONDARY_SERVER_MEM 6144
-    setprop ro.BACKUP_APP_MEM 6144
-    setprop ro.HOME_APP_MEM 6144
-    setprop ro.HIDDEN_APP_MEM 7168
-    setprop ro.EMPTY_APP_MEM 8192
+    setprop ro.FOREGROUND_APP_MEM 2560
+    setprop ro.VISIBLE_APP_MEM 4096
+    setprop ro.PERCEPTIBLE_APP_MEM 6144
+    setprop ro.HEAVY_WEIGHT_APP_MEM 6144
+    setprop ro.SECONDARY_SERVER_MEM 17408
+    setprop ro.BACKUP_APP_MEM 17408
+    setprop ro.HOME_APP_MEM 17408
+    setprop ro.HIDDEN_APP_MEM 19456
+    setprop ro.EMPTY_APP_MEM 23552
 
 # Write value must be consistent with the above properties.
 # Note that the driver only supports 6 slots, so we have combined some of
@@ -449,16 +466,62 @@ on boot
 
     write /proc/sys/vm/overcommit_memory 1
     write /proc/sys/vm/min_free_order_shift 4
-    write /sys/module/lowmemorykiller/parameters/minfree 2048,3072,4096,6144,7168,8192
+	write /sys/module/lowmemorykiller/parameters/minfree 2560,4096,6144,17408,19456,23552
 
-    # Set init its forked children's oom_adj.
+# Set init its forked children's oom_adj.
     write /proc/1/oom_adj -16
 
-    # Tweak background writeout
-    write /proc/sys/vm/dirty_expire_centisecs 200
+    write /proc/sys/vm/dirty_expire_centisecs 500
     write /proc/sys/vm/dirty_background_ratio  5
+    write /proc/sys/vm/oom_kill_allocating_task 1
+    write /proc/sys/vm/dirty_writeback_centisecs 1000
+    write /proc/sys/vm/dirty_ratio 90
+    write /proc/sys/vm/vfs_cache_pressure 10
+    write /proc/sys/kernel/sched_autogroup_enabled 1
+    write /proc/sys/kernel/sched_latency_ns 18000000
+    write /proc/sys/kernel/sched_wakeup_granularity_ns 3000000
+    write /proc/sys/kernel/sched_min_granularity_ns 1500000
+    write /proc/sys/kernel/msgmni 2048
+    write /proc/sys/kernel/msgmax 64000
+    write /proc/sys/kernel/shmmax 318984192
+    write /proc/sys/kernel/shmall 86530
+    write /proc/sys/kernel/sem 500 512000 64 2048
+    write /proc/sys/kernel/sched_compat_yield 1
+    write /proc/sys/kernel/sched_shares_ratelimit 256000
+    write /proc/sys/kernel/sched_child_runs_first 0
+    write /proc/sys/kernel/hung_task_timeout_secs 0
+    write /proc/sys/net/core/wmem_default 262144
+    write /proc/sys/net/core/rmem_default 262144
+    write /proc/sys/net/core/wmem_max 262144
+    write /proc/sys/net/core/rmem_max 262144
+    write /proc/sys/net/ipv4/tcp_mem 4096 4096 4096
+    write /proc/sys/net/ipv4/tcp_rmem 4096 87380 8388608
+    write /proc/sys/net/ipv4/tcp_wmem 4096 87380 8388608
+    write /proc/sys/net/ipv4/tcp_keepalive_time 1200
+    write /proc/sys/net/ipv4/tcp_keepalive_intvl 30
+    write /proc/sys/net/ipv4/tcp_keepalive_probes 5
+    write /proc/sys/net/ipv4/tcp_timestamps 0
+    write /proc/sys/net/ipv4/tcp_tw_reuse 1
+    write /proc/sys/net/ipv4/tcp_tw_recycle 1
+    write /proc/sys/net/ipv4/tcp_window_scaling 1
+    write /proc/sys/net/ipv4/tcp_sack 1
+    write /proc/sys/net/ipv4/tcp_no_metrics_save 1
+    write /proc/sys/net/ipv4/tcp_congestion_control cubic	
+    write /proc/sys/net/core/netdev_max_backlog 2500
+    write /proc/sys/net/ipv4/route.flush 1
 
-
+# Define TCP buffer sizes for various networks
+# ReadMin, ReadInitial, ReadMax, WriteMin, WriteInitial, WriteMax,
+    setprop net.tcp.buffersize.default 4096,87380,256960,4096,16384,256960
+	setprop net.tcp.buffersize.wifi    4096,87380,256960,4096,16384,256960
+	setprop net.tcp.buffersize.umts    4096,87380,256960,4096,16384,256960
+	setprop net.tcp.buffersize.gprs    4096,87380,256960,4096,16384,256960
+	setprop net.tcp.buffersize.edge	   4096,87380,256960,4096,16384,256960
+    setprop net.tcp.buffersize.wimax   4092,87380,1520768,4092,16384,1520768
+    setprop dalvik.vm.startheapsize 8m
+    setprop wifi.supplicant_scan_interval 300
+    setprop windowsmgr.max_events_per_sec 60
+# End Plus Tweaks-------------------------------------------------------
 #change permissions for USB
     chown radio system /sys/class/sec/switch/usb_sel
     chown radio system /sys/class/sec/switch/uart_sel
@@ -593,15 +656,7 @@ on boot
     chown system system /sys/devices/platform/s3c-keypad/brightness
     chown system system /sys/devices/platform/s3c-keypad/key_pressed    
 
-# Define TCP buffer sizes for various networks
-#   ReadMin, ReadInitial, ReadMax, WriteMin, WriteInitial, WriteMax,
-    setprop net.tcp.buffersize.default 4096,87380,110208,4096,16384,110208
-    setprop net.tcp.buffersize.wifi    4095,87380,110208,4096,16384,110208
-    setprop net.tcp.buffersize.umts    4094,87380,110208,4096,16384,110208
-    setprop net.tcp.buffersize.edge    4093,26280,35040,4096,16384,35040
-    setprop net.tcp.buffersize.gprs    4092,8760,11680,4096,8760,11680
-    setprop net.tcp.buffersize.wimax   4092,87380,1520768,4092,16384,1520768
-    
+   
 # +++++++++++++++++++++++++++++++++++++++++++
 # for Bluetooth
     chown bluetooth bluetooth /sys/module/bluetooth_power/parameters/power
@@ -757,6 +812,19 @@ service pppd_cdma /system/bin/pppd_runner
     group radio cache inet misc system
     oneshot
 
+# Custom Script Configuration
+service userscript /system/bin/sh /bin/userscript.sh
+	user root
+	group system
+	critical	
+	oneshot
+
+service bootanim /system/bin/bootanimation
+	user graphics
+	group graphics
+	critical
+	oneshot
+
 service zygote /system/bin/app_process -Xzygote /system/bin --zygote --start-system-server
     socket zygote stream 666
     onrestart write /sys/android_power/request_state wake
@@ -770,11 +838,11 @@ service media /system/bin/mediaserver
     ioprio rt 4
 
 
-service samsungani /system/bin/samsungani
-    user graphics
-    group graphics
-    disabled
-    oneshot
+#service samsungani /system/bin/samsungani
+#    user graphics
+#    group graphics
+#    disabled
+#    oneshot
 
 
 service playsound /system/bin/playsound
@@ -904,3 +972,6 @@ service wimax_route /system/bin/route add default dev uwbr0
 service wimax_renew /system/bin/dhcpcd -n uwbr0
         disabled
         oneshot	
+
+on property:sys.boot_completed=1
+stop bootanim

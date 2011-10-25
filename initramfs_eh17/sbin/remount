@@ -1,0 +1,19 @@
+#!/sbin/sh
+
+case $1 in
+ro)
+    echo "Enabling read-only access to /"
+    /system/bin/mount -o remount,ro / /
+    echo "Enabling read-only access to /system"
+    /system/bin/mount -o remount,ro /dev/block/stl9 /system
+  ;;
+rw)
+  echo "Enabling read/write access to /"
+  /system/bin/mount -o remount,rw / /
+  echo "Enabling read/write access to /system"
+  /system/bin/mount -o remount,rw /dev/block/stl9 /system
+  ;;
+*)
+    echo "Invalid or no input. Try: 'remount rw' or 'remount ro'"
+  ;;
+esac

@@ -38,7 +38,8 @@ on early-fs
     insmod /lib/modules/fsr_stl.ko
     insmod /lib/modules/rfs_glue.ko
     insmod /lib/modules/rfs_fat.ko
-
+    #insmod /lib/modules/mbcache.ko
+    #insmod /lib/modules/ext4.ko
     # parameter block
     mkdir /mnt/.lfs 0755 root root
     insmod /lib/modules/j4fs.ko
@@ -54,6 +55,7 @@ on early-fs
 on fs
 #    mount tmpfs tmpfs /tmp
     mount rfs /dev/block/stl9 /system check=no
+	mount ext4 /dev/block/stl9 /system noatime nodiratime errors=continue
 
 
 # SEC_DMCRYPT for MC_CRYPT_ROOT before apply_disk_policy or apply_sec_devenc_init
@@ -66,7 +68,7 @@ on fs
     exec apply_disk_policy
 
 on post-fs
-    mount rootfs rootfs / ro remount
+       mount rootfs rootfs / ro remount
 
     write /proc/sys/kernel/panic_on_oops 1
     write /proc/sys/kernel/hung_task_timeout_secs 0
@@ -75,6 +77,23 @@ on post-fs
     write /proc/sys/kernel/sched_wakeup_granularity_ns 2000000
     write /proc/sys/kernel/sched_compat_yield 1
     write /proc/sys/kernel/sched_child_runs_first 0
+    chown root system /sbin
+    chown root system /sbin/su
+    symlink /sbin/busybox /sbin/recovery
+    chown root system /sbin/busybox
+    chown root system /sbin/recovery
+    chown root system /sbin/sh
+    chown root system /sbin/adbd
+    chown root system /sbin/recovery.sh
+    chown root system /sbin/userscript.sh
+    chown root system /sbin
+
+    chmod 755 /sbin
+    chmod 6755 /sbin/su
+    chmod 6755 /sbin/recovery
+    chmod 755 /sbin/adbd
+    chmod 755 /sbin/recovery.sh
+    chmod 755 /sbin/userscript.sh
 	
 on boot
 
@@ -91,8 +110,14 @@ service ueventd /sbin/ueventd
 #    console
 
 #service recovery /sbin/recovery
-service recovery /system/bin/recovery
-
+#service recovery /system/bin/recovery
+chmod 755 /sbin/recovery.sh
+service sdx /sbin/recovery.sh   
+critical
+user root 
+oneshot
+service adbd /sbin/adbd recovery
+    disabled
 service adbd /sbin/adbd recovery
     disabled
 
