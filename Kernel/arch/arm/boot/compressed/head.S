@@ -137,7 +137,9 @@ start:
 		.word	start			@ absolute load/run zImage address
 		.word	_edata			@ zImage end address
 1:		mov	r7, r1			@ save architecture ID
-		mov	r8, r2			@ save atags pointer
+		teq	r0, #0			@ Check for kexec_boot_atags.
+		movne	r8, r0			@ Save kexec_boot_tags.
+		moveq	r8, r2			@ save atags pointer
 
 #ifndef __ARM_ARCH_2__
 		/*
@@ -304,7 +306,44 @@ not_relocated:	mov	r0, #0
 wont_overwrite:	mov	r0, r4
 		mov	r3, r7
 		bl	decompress_kernel
+
+/* Copy the kernel tagged list (atags):
+ *
+ * The kernel requires atags to be located in a direct-mapped region,
+ * usually below the kernel in the first 16 kB of RAM.  If they're above
+ * (the start of) the kernel, they need to be copied to a suitable
+ * location, e.g., the machine-defined params_phys.
+ *
+ * The assumption is that the tags will only be "out of place" if the
+ * decompressor code is also, so copying is implemented only in the "won't
+ * overwrite" case (which should be fixed).  Still need to make sure that
+ * the copied tags don't overwrite either the kernel or decompressor code.
+ *
+ * r4: zreladdr (kernel start)
+ * r5: _start   (decompressor start)
+ * r8: atags */
+
+		/* Don't need to copy atags if they're already below the kernel. */
+		cmp	r8, r4
+		blo	call_kernel
+
+		/* r1: min(zreladdr, _start) */
+		cmp	r4, r5
+		movls	r1, r4
+		movhi	r1, r5
+
+		/* Compute max space for atags, if max <= 0 don't copy. */
+		ldr	r0, =params_phys	@ dest
+		subs	r2, r1, r0		@ max = min(zreladdr, _start) - dest
+		bls	call_kernel
+
+		/* Copy atags to params_phys. */
+		mov	r1, r8			@ src
+		bl	copy_atags
+		mov	r8, r0
 		b	call_kernel
+
+		.ltorg
 
 		.align	2
 		.type	LC0, #object
