@@ -29,4 +29,8 @@
 #define SECTION_SIZE_BITS	28
 #define NODE_MEM_SIZE_BITS   28
 
+#if defined(CONFIG_KEXEC_HARDBOOT) && !defined(CONFIG_MACH_SMDKV210) && defined(CONFIG_DDR_RAM_3G)
+#define KEXEC_HB_PAGE_ADDR 0x57fff000
+#endif
+
 #endif /* __ASM_ARCH_MEMORY_H */
