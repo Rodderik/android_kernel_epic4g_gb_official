@@ -770,6 +770,9 @@ service dhcpcd /system/bin/dhcpcd
     disabled
     oneshot
 
+service iprenew_eth0 /system/bin/dhcpcd -n
+    disabled
+    oneshot
 
 service servicemanager /system/bin/servicemanager
     user system
